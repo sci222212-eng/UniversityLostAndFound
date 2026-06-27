@@ -1,40 +1,56 @@
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using UniversityLostAndFound.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-builder.Services.AddDbContext<UniversityLostAndFound.Data.ApplicationDbContext>(options =>
+// 1. إضافة اتصال قاعدة البيانات الأصلي الخاص بمشروعك
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
 
-builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = false)
-    .AddEntityFrameworkStores<ApplicationDbContext>();
-// Add services to the container.
+//builder.Services.AddDatabaseDeveloperPageExceptionFilter();
+
+// 2. تفعيل خدمات الـ Identity للمستخدمين وربطها بكلاس قاعدة بياناتك
+builder.Services.AddIdentity<UniversityLostAndFound.Data.ApplicationUser, IdentityRole>(options => options.SignIn.RequireConfirmedAccount = false)
+    .AddEntityFrameworkStores<ApplicationDbContext>()
+    .AddDefaultTokenProviders()
+    .AddDefaultUI();
+// 3. التعديل السحري الأول: إضافة دعم صفحات الـ Razor Pages لـ Identity
 builder.Services.AddControllersWithViews();
+builder.Services.AddRazorPages();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (!app.Environment.IsDevelopment())
+// إعدادات بيئة العمل (تُترك كما هي)
+if (app.Environment.IsDevelopment())
+{
+   // app.UseMigrationsEndPoint();
+}
+else
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
 app.UseHttpsRedirection();
-
-// تم استبدال الكود القديم بالكود الكلاسيكي المتوافق مع .NET 8 هنا
 app.UseStaticFiles();
 
 app.UseRouting();
 
+// 4. التعديل السحري الثاني: تفعيل نظام التحقق من الهوية والحماية بالترتيب الصحيح
+app.UseAuthentication();
 app.UseAuthorization();
 
-// تم تصحيح الـ Route وحذف الميزة غير المدعومة في .NET 8 هنا
+// 5. توجيه الصفحات الافتراضية للموقع
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+
+// 6. التعديل السحري الثالث: ربط وتفعيل واجهات صفحات الـ Identity (تسجيل الدخول)
+app.MapRazorPages();
 
 app.Run();
