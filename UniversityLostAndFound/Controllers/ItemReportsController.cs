@@ -1,8 +1,9 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using UniversityLostAndFound.Models;
 using UniversityLostAndFound.Data;
-
+using UniversityLostAndFound.Models;
+[Authorize]
 public class ItemReportsController : Controller
 {
     private readonly ApplicationDbContext _context;
